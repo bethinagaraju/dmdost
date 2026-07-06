@@ -20,16 +20,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem("instaautodm_token");
-    const storedUser = localStorage.getItem("instaautodm_user");
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      try {
-        setUser(JSON.parse(storedUser) as User);
-      } catch {
-        localStorage.removeItem("instaautodm_token");
-        localStorage.removeItem("instaautodm_user");
+    try {
+      const storedToken = localStorage.getItem("instaautodm_token");
+      const storedUser = localStorage.getItem("instaautodm_user");
+      if (storedToken && storedUser) {
+        setToken(storedToken);
+        try {
+          setUser(JSON.parse(storedUser) as User);
+        } catch {
+          localStorage.removeItem("instaautodm_token");
+          localStorage.removeItem("instaautodm_user");
+        }
       }
+    } catch {
+      // localStorage not available
     }
     setIsLoading(false);
   }, []);
