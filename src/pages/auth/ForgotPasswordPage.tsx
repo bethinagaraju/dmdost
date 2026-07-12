@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { motion } from "framer-motion";
-import { ArrowLeft, Mail, Zap } from "lucide-react";
+import { ArrowLeft, Mail, Zap, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,15 +14,24 @@ interface ForgotForm { email: string }
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
+  const [apiError, setApiError] = useState<string | null>(null);
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ForgotForm>();
 
   const onSubmit = async (data: ForgotForm) => {
+    setApiError(null);
     try {
-      await authService.forgotPassword(data.email);
-      showToast("Reset link sent! Check your email.", "success");
-      navigate("/login");
-    } catch {
-      showToast("Something went wrong. Try again.", "error");
+      const response = await authService.forgotPassword(data.email);
+      showToast("Reset token generated successfully! 🔑", "success");
+      // Since it's local development/testing, the token is returned in data.
+      // Redirect directly to reset password with prefilled token & email
+      const resetToken = response.data;
+      setTimeout(() => {
+        navigate(`/reset-password?token=${encodeURIComponent(resetToken)}&email=${encodeURIComponent(data.email)}`);
+      }, 1000);
+    } catch (error: any) {
+      const errorMessage = error.message || "Failed to generate password reset token. Try again.";
+      setApiError(errorMessage);
+      showToast("Request failed", "error");
     }
   };
 
@@ -40,7 +50,7 @@ export default function ForgotPasswordPage() {
             <Mail className="size-8 text-primary" />
           </div>
           <h2 className="text-3xl font-bold mb-2">Forgot Password?</h2>
-          <p className="text-muted-foreground">Enter your email and we'll send you a reset link.</p>
+          <p className="text-muted-foreground">Enter your email and we'll generate a reset token.</p>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -52,12 +62,21 @@ export default function ForgotPasswordPage() {
               placeholder="you@example.com"
               {...register("email", { required: "Email is required", pattern: { value: /\S+@\S+\.\S+/, message: "Invalid email" } })}
               aria-invalid={!!errors.email}
+              disabled={isSubmitting}
             />
             {errors.email && <p className="text-xs text-destructive">{errors.email.message}</p>}
           </div>
 
-          <Button type="submit" className="w-full gradient-brand text-white border-0 hover:opacity-90" disabled={isSubmitting}>
-            {isSubmitting ? "Sending..." : "Send Reset Link"}
+          {/* API Error Notification */}
+          {apiError && (
+            <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg">
+              <AlertCircle className="size-4 shrink-0" />
+              <p>{apiError}</p>
+            </div>
+          )}
+
+          <Button type="submit" className="w-full gradient-brand text-white border-0 hover:opacity-90 h-12" disabled={isSubmitting}>
+            {isSubmitting ? "Generating..." : "Generate Reset Token"}
           </Button>
         </form>
 

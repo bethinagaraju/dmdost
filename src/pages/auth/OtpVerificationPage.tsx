@@ -1,7 +1,7 @@
-import { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Zap, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Zap, ShieldCheck, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { authService } from "@/services";
 import { showToast } from "@/hooks";
@@ -11,8 +11,30 @@ import { cn } from "@/lib/utils";
 export default function OtpVerificationPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [isLoading, setIsLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [timer, setTimer] = useState(60);
+  const [canResend, setCanResend] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const email = searchParams.get("email") || "";
+
+  // Tick down timer
+  useEffect(() => {
+    let intervalId: any;
+    if (timer > 0) {
+      intervalId = setInterval(() => {
+        setTimer((t) => t - 1);
+      }, 1000);
+    } else {
+      setCanResend(true);
+    }
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [timer]);
 
   const handleChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
@@ -28,17 +50,47 @@ export default function OtpVerificationPage() {
     }
   };
 
+  const handleResendOtp = async () => {
+    if (!email) {
+      showToast("Email address is missing from the URL search params.", "error");
+      return;
+    }
+    setResending(true);
+    setApiError(null);
+    try {
+      await authService.resendOtp(email);
+      showToast("A new verification OTP has been sent! ✉️", "success");
+      setTimer(60);
+      setCanResend(false);
+    } catch (err: any) {
+      setApiError(err.message || "Failed to resend OTP. Try again.");
+      showToast("Resend failed", "error");
+    } finally {
+      setResending(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = otp.join("");
-    if (code.length !== 6) { showToast("Please enter the full 6-digit code", "error"); return; }
+    if (code.length !== 6) {
+      showToast("Please enter the full 6-digit code", "error");
+      return;
+    }
+    if (!email) {
+      showToast("Email is missing from query parameters.", "error");
+      return;
+    }
+
     setIsLoading(true);
+    setApiError(null);
     try {
-      await authService.verifyOtp(code);
-      showToast("Email verified successfully! 🎉", "success");
-      navigate("/dashboard");
-    } catch {
-      showToast("Invalid OTP. Please try again.", "error");
+      await authService.verifyOtp(email, code);
+      showToast("Email verification successful! You can now log in. 🎉", "success");
+      navigate("/login");
+    } catch (err: any) {
+      setApiError(err.message || "Invalid OTP. Please try again.");
+      showToast("Verification failed", "error");
     } finally {
       setIsLoading(false);
     }
@@ -59,12 +111,12 @@ export default function OtpVerificationPage() {
         </div>
         <h2 className="text-3xl font-bold mb-2">Verify Your Email</h2>
         <p className="text-muted-foreground mb-8">
-          We sent a 6-digit code to <strong>alex@example.com</strong>.
+          We sent a 6-digit code to <strong>{email || "your email"}</strong>.
           Enter it below to verify your account.
         </p>
 
         <form onSubmit={handleSubmit}>
-          <div className="flex gap-3 justify-center mb-8">
+          <div className="flex gap-3 justify-center mb-6">
             {otp.map((digit, i) => (
               <input
                 key={i}
@@ -80,18 +132,38 @@ export default function OtpVerificationPage() {
                   "focus:border-primary focus:ring-2 focus:ring-primary/20",
                   digit ? "border-primary bg-primary/5" : "border-input"
                 )}
+                disabled={isLoading}
               />
             ))}
           </div>
 
-          <Button type="submit" className="w-full gradient-brand text-white border-0 hover:opacity-90 mb-4" disabled={isLoading}>
+          {/* API Error Notification */}
+          {apiError && (
+            <div className="flex items-center gap-2 p-3 text-sm text-red-600 bg-red-500/10 border border-red-500/20 rounded-lg mb-6 text-left">
+              <AlertCircle className="size-4 shrink-0" />
+              <p>{apiError}</p>
+            </div>
+          )}
+
+          <Button type="submit" className="w-full gradient-brand text-white border-0 hover:opacity-90 mb-4 h-12" disabled={isLoading}>
             {isLoading ? "Verifying..." : "Verify Code"}
           </Button>
         </form>
 
-        <p className="text-sm text-muted-foreground mb-4">
+        <p className="text-sm text-muted-foreground mb-6">
           Didn't receive a code?{" "}
-          <button className="text-primary font-medium hover:underline">Resend in 60s</button>
+          {canResend ? (
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={resending}
+              className="text-primary font-medium hover:underline focus:outline-none"
+            >
+              {resending ? "Resending..." : "Resend code"}
+            </button>
+          ) : (
+            <span className="font-medium text-zinc-500">Resend in {timer}s</span>
+          )}
         </p>
 
         <Link to="/login" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">

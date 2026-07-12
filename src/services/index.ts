@@ -39,39 +39,7 @@ function ok<T>(data: T, message = "Success"): ApiResponse<T> {
   return { data, message, success: true };
 }
 
-export const authService = {
-  login: async (email: string, _password: string): Promise<ApiResponse<{ user: User; token: string }>> => {
-    await delay(800);
-    if (email === "admin@instaautodm.com") {
-      return ok({ user: { ...MOCK_USER, role: "admin" as const }, token: "mock_jwt_token_admin" });
-    }
-    return ok({ user: MOCK_USER, token: "mock_jwt_token_123" });
-  },
-
-  register: async (_data: { name: string; email: string; password: string }): Promise<ApiResponse<{ user: User; token: string }>> => {
-    await delay(1000);
-    return ok({ user: MOCK_USER, token: "mock_jwt_token_123" });
-  },
-
-  forgotPassword: async (_email: string): Promise<ApiResponse<null>> => {
-    await delay(600);
-    return ok(null, "Password reset email sent");
-  },
-
-  resetPassword: async (_token: string, _password: string): Promise<ApiResponse<null>> => {
-    await delay(700);
-    return ok(null, "Password reset successfully");
-  },
-
-  verifyOtp: async (_otp: string): Promise<ApiResponse<null>> => {
-    await delay(500);
-    return ok(null, "OTP verified successfully");
-  },
-
-  logout: async (): Promise<void> => {
-    await delay(300);
-  },
-};
+export { authService } from "./auth.service";
 
 export const userService = {
   getProfile: async (): Promise<ApiResponse<User>> => {
@@ -96,20 +64,54 @@ export const userService = {
 };
 
 export const instagramService = {
+  getStatus: async (): Promise<ApiResponse<{ connected: boolean; username: string | null }>> => {
+    const token = localStorage.getItem("instaautodm_token");
+    const response = await fetch("/api/v1/instagram/status", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to fetch status");
+    }
+    return data;
+  },
+
   getAccounts: async (): Promise<ApiResponse<InstagramAccount[]>> => {
     await delay(500);
     return ok(MOCK_INSTAGRAM_ACCOUNTS);
   },
 
-  connectAccount: async (): Promise<ApiResponse<{ authUrl: string }>> => {
-    await delay(300);
-    return ok({ authUrl: "#mock-oauth" }, "Redirecting to Instagram OAuth");
+  connectAccount: async (): Promise<ApiResponse<{ authorizationUrl: string }>> => {
+    const token = localStorage.getItem("instaautodm_token");
+    const response = await fetch("/api/v1/instagram/connect", {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to generate authorization URL");
+    }
+    return data;
   },
 
-  disconnectAccount: async (id: string): Promise<ApiResponse<null>> => {
-    await delay(400);
-    console.log("Disconnecting account:", id);
-    return ok(null, "Account disconnected");
+  disconnectAccount: async (id?: string): Promise<ApiResponse<null>> => {
+    const token = localStorage.getItem("instaautodm_token");
+    const response = await fetch("/api/v1/instagram/disconnect", {
+      method: "DELETE",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+    const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to disconnect account");
+    }
+    return data;
   },
 
   refreshToken: async (id: string): Promise<ApiResponse<null>> => {

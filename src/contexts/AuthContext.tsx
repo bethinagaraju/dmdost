@@ -8,7 +8,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (data: { name: string; email: string; password: string }) => Promise<void>;
+  register: (data: { firstName: string; lastName: string; email: string; password: string }) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -20,45 +20,122 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const storedToken = localStorage.getItem("instaautodm_token");
-      const storedUser = localStorage.getItem("instaautodm_user");
-      if (storedToken && storedUser) {
-        setToken(storedToken);
-        try {
-          setUser(JSON.parse(storedUser) as User);
-        } catch {
-          localStorage.removeItem("instaautodm_token");
-          localStorage.removeItem("instaautodm_user");
+    const verifySession = async () => {
+      try {
+        const storedToken = localStorage.getItem("instaautodm_token");
+        const storedUser = localStorage.getItem("instaautodm_user");
+        const storedRefreshToken = localStorage.getItem("instaautodm_refresh_token");
+
+        if (storedToken && storedUser) {
+          // Set initial local state first so UI is responsive
+          setToken(storedToken);
+          try {
+            setUser(JSON.parse(storedUser) as User);
+          } catch {
+            // ignore JSON parse error
+          }
+
+          try {
+            // Verify current session with the backend using getCurrentUser (endpoint 7)
+            const response = await authService.getCurrentUser(storedToken);
+            if (response.success && response.data) {
+              const mappedUser: User = {
+                id: response.data.userId,
+                name: `${response.data.firstName} ${response.data.lastName}`.trim(),
+                email: response.data.email,
+                role: response.data.role.toLowerCase() as "user" | "admin",
+                plan: "free",
+                createdAt: new Date().toISOString(),
+                instagramAccounts: 0,
+              };
+              setUser(mappedUser);
+              localStorage.setItem("instaautodm_user", JSON.stringify(mappedUser));
+            } else {
+              throw new Error("Invalid session");
+            }
+          } catch (err) {
+            // If verify session fails (e.g. accessToken is expired), try silent refresh
+            if (storedRefreshToken) {
+              try {
+                const refreshResponse = await authService.refreshToken(storedRefreshToken);
+                const newData = refreshResponse.data;
+                const mappedUser: User = {
+                  id: newData.userId,
+                  name: `${newData.firstName} ${newData.lastName}`.trim(),
+                  email: newData.email,
+                  role: newData.role.toLowerCase() as "user" | "admin",
+                  plan: "free",
+                  createdAt: new Date().toISOString(),
+                  instagramAccounts: 0,
+                };
+                setUser(mappedUser);
+                setToken(newData.accessToken);
+                localStorage.setItem("instaautodm_token", newData.accessToken);
+                localStorage.setItem("instaautodm_refresh_token", newData.refreshToken);
+                localStorage.setItem("instaautodm_user", JSON.stringify(mappedUser));
+              } catch {
+                // If refresh token fails, clear session
+                localStorage.removeItem("instaautodm_token");
+                localStorage.removeItem("instaautodm_refresh_token");
+                localStorage.removeItem("instaautodm_user");
+                setUser(null);
+                setToken(null);
+              }
+            } else {
+              localStorage.removeItem("instaautodm_token");
+              localStorage.removeItem("instaautodm_user");
+              setUser(null);
+              setToken(null);
+            }
+          }
         }
+      } catch (e) {
+        // localStorage or window error
       }
-    } catch {
-      // localStorage not available
-    }
-    setIsLoading(false);
+      setIsLoading(false);
+    };
+
+    verifySession();
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await authService.login(email, password);
-    setUser(response.data.user);
-    setToken(response.data.token);
-    localStorage.setItem("instaautodm_token", response.data.token);
-    localStorage.setItem("instaautodm_user", JSON.stringify(response.data.user));
+    const response = await authService.login({ email, password });
+    const { accessToken, refreshToken, userId, email: userEmail, role, firstName, lastName } = response.data;
+    
+    const mappedUser: User = {
+      id: userId,
+      name: `${firstName} ${lastName}`.trim(),
+      email: userEmail,
+      role: role.toLowerCase() as "user" | "admin",
+      plan: "free",
+      createdAt: new Date().toISOString(),
+      instagramAccounts: 0,
+    };
+
+    setUser(mappedUser);
+    setToken(accessToken);
+    localStorage.setItem("instaautodm_token", accessToken);
+    localStorage.setItem("instaautodm_refresh_token", refreshToken);
+    localStorage.setItem("instaautodm_user", JSON.stringify(mappedUser));
   }, []);
 
-  const register = useCallback(async (data: { name: string; email: string; password: string }) => {
-    const response = await authService.register(data);
-    setUser(response.data.user);
-    setToken(response.data.token);
-    localStorage.setItem("instaautodm_token", response.data.token);
-    localStorage.setItem("instaautodm_user", JSON.stringify(response.data.user));
+  const register = useCallback(async (data: { firstName: string; lastName: string; email: string; password: string }) => {
+    await authService.register(data);
   }, []);
 
   const logout = useCallback(async () => {
-    await authService.logout();
+    const storedRefreshToken = localStorage.getItem("instaautodm_refresh_token");
+    if (storedRefreshToken) {
+      try {
+        await authService.logout(storedRefreshToken);
+      } catch {
+        // Proceed with local logout regardless of API failure
+      }
+    }
     setUser(null);
     setToken(null);
     localStorage.removeItem("instaautodm_token");
+    localStorage.removeItem("instaautodm_refresh_token");
     localStorage.removeItem("instaautodm_user");
   }, []);
 
