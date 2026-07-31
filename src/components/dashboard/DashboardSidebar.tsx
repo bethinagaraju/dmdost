@@ -85,9 +85,7 @@ export function DashboardSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <Link to="/dashboard" className="flex items-center gap-2 px-2 py-1">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm shrink-0">
-            IG
-          </div>
+          <img src="/logo.png" alt={APP_NAME} className="size-8 object-contain shrink-0" />
           <span className="font-bold text-sidebar-foreground truncate">{APP_NAME}</span>
         </Link>
       </SidebarHeader>

@@ -65,7 +65,7 @@ export const userService = {
 
 export const instagramService = {
   getStatus: async (): Promise<ApiResponse<{ connected: boolean; username: string | null }>> => {
-    const token = localStorage.getItem("instaautodm_token");
+    const token = localStorage.getItem("dmdost_token");
     const response = await fetch("/api/v1/instagram/status", {
       method: "GET",
       headers: {
@@ -85,7 +85,7 @@ export const instagramService = {
   },
 
   connectAccount: async (): Promise<ApiResponse<{ authorizationUrl: string }>> => {
-    const token = localStorage.getItem("instaautodm_token");
+    const token = localStorage.getItem("dmdost_token");
     const response = await fetch("/api/v1/instagram/connect", {
       method: "GET",
       headers: {
@@ -99,8 +99,8 @@ export const instagramService = {
     return data;
   },
 
-  disconnectAccount: async (id?: string): Promise<ApiResponse<null>> => {
-    const token = localStorage.getItem("instaautodm_token");
+  disconnectAccount: async (_id?: string): Promise<ApiResponse<null>> => {
+    const token = localStorage.getItem("dmdost_token");
     const response = await fetch("/api/v1/instagram/disconnect", {
       method: "DELETE",
       headers: {

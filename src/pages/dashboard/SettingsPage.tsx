@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const { user } = useAuth();
   const currentUser = user ?? MOCK_USER;
 
-  const [profile, setProfile] = useState({ name: currentUser.name, email: currentUser.email, bio: "Building @InstaAutoDM. Passionate about automation and growth.", timezone: "America/New_York" });
+  const [profile, setProfile] = useState({ name: currentUser.name, email: currentUser.email, bio: "Building @DmDost. Passionate about automation and growth.", timezone: "America/New_York" });
   const [passwords, setPasswords] = useState({ current: "", newPw: "", confirm: "" });
   const [showPw, setShowPw] = useState({ current: false, newPw: false, confirm: false });
   const [notifications, setNotifications] = useState({

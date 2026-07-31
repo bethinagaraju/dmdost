@@ -22,9 +22,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const verifySession = async () => {
       try {
-        const storedToken = localStorage.getItem("instaautodm_token");
-        const storedUser = localStorage.getItem("instaautodm_user");
-        const storedRefreshToken = localStorage.getItem("instaautodm_refresh_token");
+        const storedToken = localStorage.getItem("dmdost_token");
+        const storedUser = localStorage.getItem("dmdost_user");
+        const storedRefreshToken = localStorage.getItem("dmdost_refresh_token");
 
         if (storedToken && storedUser) {
           // Set initial local state first so UI is responsive
@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 instagramAccounts: 0,
               };
               setUser(mappedUser);
-              localStorage.setItem("instaautodm_user", JSON.stringify(mappedUser));
+              localStorage.setItem("dmdost_user", JSON.stringify(mappedUser));
             } else {
               throw new Error("Invalid session");
             }
@@ -70,20 +70,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 };
                 setUser(mappedUser);
                 setToken(newData.accessToken);
-                localStorage.setItem("instaautodm_token", newData.accessToken);
-                localStorage.setItem("instaautodm_refresh_token", newData.refreshToken);
-                localStorage.setItem("instaautodm_user", JSON.stringify(mappedUser));
+                localStorage.setItem("dmdost_token", newData.accessToken);
+                localStorage.setItem("dmdost_refresh_token", newData.refreshToken);
+                localStorage.setItem("dmdost_user", JSON.stringify(mappedUser));
               } catch {
                 // If refresh token fails, clear session
-                localStorage.removeItem("instaautodm_token");
-                localStorage.removeItem("instaautodm_refresh_token");
-                localStorage.removeItem("instaautodm_user");
+                localStorage.removeItem("dmdost_token");
+                localStorage.removeItem("dmdost_refresh_token");
+                localStorage.removeItem("dmdost_user");
                 setUser(null);
                 setToken(null);
               }
             } else {
-              localStorage.removeItem("instaautodm_token");
-              localStorage.removeItem("instaautodm_user");
+              localStorage.removeItem("dmdost_token");
+              localStorage.removeItem("dmdost_user");
               setUser(null);
               setToken(null);
             }
@@ -114,9 +114,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     setUser(mappedUser);
     setToken(accessToken);
-    localStorage.setItem("instaautodm_token", accessToken);
-    localStorage.setItem("instaautodm_refresh_token", refreshToken);
-    localStorage.setItem("instaautodm_user", JSON.stringify(mappedUser));
+    localStorage.setItem("dmdost_token", accessToken);
+    localStorage.setItem("dmdost_refresh_token", refreshToken);
+    localStorage.setItem("dmdost_user", JSON.stringify(mappedUser));
   }, []);
 
   const register = useCallback(async (data: { firstName: string; lastName: string; email: string; password: string }) => {
@@ -124,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    const storedRefreshToken = localStorage.getItem("instaautodm_refresh_token");
+    const storedRefreshToken = localStorage.getItem("dmdost_refresh_token");
     if (storedRefreshToken) {
       try {
         await authService.logout(storedRefreshToken);
@@ -134,9 +134,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     setUser(null);
     setToken(null);
-    localStorage.removeItem("instaautodm_token");
-    localStorage.removeItem("instaautodm_refresh_token");
-    localStorage.removeItem("instaautodm_user");
+    localStorage.removeItem("dmdost_token");
+    localStorage.removeItem("dmdost_refresh_token");
+    localStorage.removeItem("dmdost_user");
   }, []);
 
   return (

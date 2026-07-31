@@ -8,6 +8,12 @@ import { ToastNotifications } from "@/components/ToastNotifications";
 // Landing
 import LandingPage from "@/pages/landing/LandingPage";
 
+// Public Pages
+import PrivacyPolicyPage from "@/pages/public/PrivacyPolicyPage";
+import TermsAndConditionsPage from "@/pages/public/TermsAndConditionsPage";
+import ContactPage from "@/pages/public/ContactPage";
+import DataDeletionPage from "@/pages/public/DataDeletionPage";
+
 // Auth
 import LoginPage from "@/pages/auth/LoginPage";
 import RegisterPage from "@/pages/auth/RegisterPage";
@@ -50,6 +56,10 @@ export default function App() {
         <Routes>
           {/* Public landing */}
           <Route path="/" element={<LandingPage />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+          <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/data-deletion" element={<DataDeletionPage />} />
 
           {/* Auth routes */}
           <Route element={<AuthLayout />}>

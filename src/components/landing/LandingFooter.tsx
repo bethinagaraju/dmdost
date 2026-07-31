@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Zap, X, ExternalLink } from "lucide-react";
+import { X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { APP_NAME } from "@/constants";
@@ -15,30 +15,31 @@ export function LandingFooter() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="rounded-2xl gradient-brand p-12 text-center mb-16"
+          className="rounded-[3rem] bg-gradient-to-r from-purple-600 to-pink-500 p-12 md:p-20 text-center mb-16 shadow-2xl shadow-purple-500/20"
         >
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to Grow Your Instagram?
+          <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-6 max-w-3xl mx-auto">
+            Ready for Peak Instagram Growth?
           </h2>
-          <p className="text-white/80 text-lg mb-8 max-w-xl mx-auto">
-            Join 50,000+ creators and businesses automating their Instagram growth with InstaAutoDM.
+          <p className="text-white/90 text-lg md:text-xl mb-10 max-w-2xl mx-auto">
+            Don't miss out - join our waitlist now for early access, special pricing and exclusive deals.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" variant="secondary" asChild className="h-12 px-8 bg-white text-primary hover:bg-white/90">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Button size="lg" asChild className="h-14 px-10 bg-white text-purple-600 hover:bg-white/90 font-bold text-lg rounded-xl shadow-lg">
               <Link to="/register">
-                Start Free Today <ArrowRight className="ml-2 size-5" />
+                Start for Free
               </Link>
             </Button>
           </div>
-          <p className="text-white/60 text-sm mt-4">No credit card required • Free plan forever</p>
+          <p className="text-white/70 text-sm mt-6 flex items-center justify-center gap-2">
+            <span className="flex size-1.5 rounded-full bg-green-400"></span>
+            More than 50k users have joined
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           <div>
             <Link to="/" className="flex items-center gap-2 font-bold text-xl mb-4">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <Zap className="size-4" />
-              </div>
+              <img src="/logo.png" alt={APP_NAME} className="size-8 object-contain" />
               <span className="text-gradient">{APP_NAME}</span>
             </Link>
             <p className="text-muted-foreground text-sm leading-relaxed mb-4">
@@ -74,9 +75,10 @@ export function LandingFooter() {
           <div>
             <h4 className="font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              {["About Us", "Careers", "Privacy Policy", "Terms of Service", "Contact"].map((item) => (
-                <li key={item}><a href="#" className="hover:text-foreground transition-colors">{item}</a></li>
-              ))}
+              <li><Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy Policy</Link></li>
+              <li><Link to="/terms-and-conditions" className="hover:text-foreground transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/data-deletion" className="hover:text-foreground transition-colors">Data Deletion</Link></li>
             </ul>
           </div>
         </div>
@@ -86,9 +88,9 @@ export function LandingFooter() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
           <p>© {year} {APP_NAME}. All rights reserved.</p>
           <div className="flex gap-4">
-            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Terms</a>
-            <a href="#" className="hover:text-foreground transition-colors">Cookies</a>
+            <Link to="/privacy-policy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <Link to="/terms-and-conditions" className="hover:text-foreground transition-colors">Terms</Link>
+            <Link to="/contact" className="hover:text-foreground transition-colors">Contact</Link>
           </div>
         </div>
       </div>

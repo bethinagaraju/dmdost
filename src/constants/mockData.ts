@@ -29,7 +29,7 @@ export const MOCK_USER: User = {
 export const MOCK_ADMIN_USER: User = {
   id: "usr_admin",
   name: "Admin User",
-  email: "admin@instaautodm.com",
+  email: "admin@dmdost.com",
   avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Admin",
   role: "admin",
   plan: "enterprise",

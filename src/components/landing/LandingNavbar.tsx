@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, Zap } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { APP_NAME, NAV_LINKS } from "@/constants";
@@ -28,9 +28,7 @@ export function LandingNavbar() {
     >
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 font-bold text-xl">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <Zap className="size-4" />
-          </div>
+          <img src="/logo.png" alt={APP_NAME} className="size-8 object-contain" />
           <span className="text-gradient">{APP_NAME}</span>
         </Link>
 

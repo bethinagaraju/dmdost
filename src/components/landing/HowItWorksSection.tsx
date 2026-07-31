@@ -1,15 +1,33 @@
 import { motion } from "framer-motion";
-import type React from "react";
-import { UserPlus, Camera, Zap, TrendingUp } from "lucide-react";
-import { HOW_IT_WORKS } from "@/constants";
+import { Link2, Settings2, Rocket, ArrowRight } from "lucide-react";
 
-const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
-  UserPlus, Instagram: Camera, Zap, TrendingUp,
-};
+const steps = [
+  {
+    icon: Link2,
+    title: "Connect",
+    description: "Macintosh hands-on branch, frame structuring into deal auto-flow.",
+    color: "text-purple-600",
+    bg: "bg-purple-100",
+  },
+  {
+    icon: Settings2,
+    title: "Customize",
+    description: "Working variants to customize campaign dates and details securely out the box.",
+    color: "text-pink-600",
+    bg: "bg-pink-100",
+  },
+  {
+    icon: Rocket,
+    title: "Launch",
+    description: "Launch all campaigns in autopilot to hit absolute fit in growth goals.",
+    color: "text-purple-600",
+    bg: "bg-purple-100",
+  }
+];
 
 export function HowItWorksSection() {
   return (
-    <section id="how-it-works" className="py-24 bg-muted/30">
+    <section id="how-it-works" className="py-24 bg-background">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -17,38 +35,38 @@ export function HowItWorksSection() {
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <span className="text-primary text-sm font-semibold uppercase tracking-widest">How It Works</span>
-          <h2 className="text-4xl font-bold mt-2 mb-4">Up & Running in 5 Minutes</h2>
+          <span className="text-muted-foreground text-xs font-bold uppercase tracking-[0.2em] mb-4 block">How It Works</span>
+          <h2 className="text-3xl md:text-5xl font-extrabold mt-2 mb-4">Up and Running in 5 Minutes</h2>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            No technical knowledge needed. Follow these 4 simple steps to automate your Instagram growth.
+            It's in the mornings. How to eliminate the block to lean over in your Instagram growth.
           </p>
         </motion.div>
 
-        <div className="relative max-w-4xl mx-auto">
-          <div className="absolute top-16 left-16 right-16 h-0.5 bg-gradient-to-r from-primary via-secondary to-accent hidden md:block" />
-
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {HOW_IT_WORKS.map((step, i) => {
-              const Icon = iconMap[step.icon];
+        <div className="relative max-w-5xl mx-auto mt-20">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+            {steps.map((step, i) => {
+              const Icon = step.icon;
               return (
                 <motion.div
-                  key={step.step}
+                  key={step.title}
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.15 }}
-                  className="flex flex-col items-center text-center relative"
+                  className="flex flex-col items-center relative z-10"
                 >
-                  <div className="relative z-10 mb-6">
-                    <div className="size-16 rounded-2xl gradient-brand flex items-center justify-center shadow-lg shadow-primary/30 mb-3">
-                      {Icon && <Icon className="size-7 text-white" />}
-                    </div>
-                    <div className="absolute -top-2 -right-2 size-6 rounded-full bg-background border-2 border-primary flex items-center justify-center text-xs font-bold text-primary">
-                      {step.step}
-                    </div>
+                  <div className={`size-20 rounded-3xl ${step.bg} flex items-center justify-center mb-6 shadow-xl shadow-purple-500/10`}>
+                    <Icon className={`size-10 ${step.color}`} />
                   </div>
-                  <h3 className="font-bold text-lg mb-2">{step.title}</h3>
-                  <p className="text-muted-foreground text-sm">{step.description}</p>
+                  
+                  <h3 className="font-bold text-xl mb-3 text-foreground">{step.title}</h3>
+                  <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">{step.description}</p>
+                  
+                  {i < steps.length - 1 && (
+                    <div className="hidden md:flex absolute top-10 -right-12 text-muted-foreground/30 items-center justify-center w-24">
+                      <ArrowRight className="size-8" />
+                    </div>
+                  )}
                 </motion.div>
               );
             })}

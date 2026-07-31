@@ -1,6 +1,6 @@
 import type { PricingPlan } from "@/types";
 
-export const APP_NAME = "InstaAutoDM";
+export const APP_NAME = "DmDost";
 export const APP_TAGLINE = "Automate Your Instagram, Amplify Your Growth";
 
 export const NAV_LINKS = [
@@ -112,7 +112,7 @@ export const TESTIMONIALS = [
     company: "StyleHive Co.",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=jess",
     rating: 5,
-    content: "InstaAutoDM transformed our Instagram strategy. We went from manually responding to hundreds of comments to having everything automated. Our conversion rate increased by 340% in just 2 months!",
+    content: "DmDost transformed our Instagram strategy. We went from manually responding to hundreds of comments to having everything automated. Our conversion rate increased by 340% in just 2 months!",
   },
   {
     id: 2,
@@ -121,7 +121,7 @@ export const TESTIMONIALS = [
     company: "GrowthLab Agency",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=marcus",
     rating: 5,
-    content: "Managing 20+ client accounts used to be a nightmare. Now with InstaAutoDM, we handle everything seamlessly. The keyword DM feature alone has generated over $50k in additional revenue for our clients.",
+    content: "Managing 20+ client accounts used to be a nightmare. Now with DmDost, we handle everything seamlessly. The keyword DM feature alone has generated over $50k in additional revenue for our clients.",
   },
   {
     id: 3,
@@ -130,7 +130,7 @@ export const TESTIMONIALS = [
     company: "FitWithPriya",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=priya",
     rating: 5,
-    content: "As a fitness coach, engagement is everything. InstaAutoDM helps me personally connect with every follower at scale. My client acquisition has tripled since I started using it!",
+    content: "As a fitness coach, engagement is everything. DmDost helps me personally connect with every follower at scale. My client acquisition has tripled since I started using it!",
   },
   {
     id: 4,
@@ -155,17 +155,17 @@ export const TESTIMONIALS = [
 export const FAQS = [
   {
     id: 1,
-    question: "Is InstaAutoDM safe to use with my Instagram account?",
-    answer: "Yes, absolutely! InstaAutoDM uses the official Instagram Graph API, which means your account is 100% safe. We follow all of Instagram's terms of service and rate limits to ensure your account stays protected.",
+    question: "Is DmDost safe to use with my Instagram account?",
+    answer: "Yes, absolutely! DmDost uses the official Instagram Graph API, which means your account is 100% safe. We follow all of Instagram's terms of service and rate limits to ensure your account stays protected.",
   },
   {
     id: 2,
     question: "How does the keyword DM automation work?",
-    answer: "When someone comments on your post with a specific keyword you've set (like 'price', 'discount', or 'info'), InstaAutoDM automatically sends them a personalized DM with your predefined message or template.",
+    answer: "When someone comments on your post with a specific keyword you've set (like 'price', 'discount', or 'info'), DmDost automatically sends them a personalized DM with your predefined message or template.",
   },
   {
     id: 3,
-    question: "Can I use InstaAutoDM for multiple Instagram accounts?",
+    question: "Can I use DmDost for multiple Instagram accounts?",
     answer: "Yes! Depending on your plan, you can connect and manage multiple Instagram accounts from a single dashboard. Our Professional plan supports up to 5 accounts, and Enterprise supports unlimited accounts.",
   },
   {
@@ -217,7 +217,7 @@ export const HOW_IT_WORKS = [
   {
     step: 4,
     title: "Sit Back & Relax",
-    description: "Watch your engagement soar while InstaAutoDM handles all your DMs, comments, and follower interactions automatically.",
+    description: "Watch your engagement soar while DmDost handles all your DMs, comments, and follower interactions automatically.",
     icon: "TrendingUp",
   },
 ];
@@ -266,7 +266,7 @@ export const FEATURES = [
   {
     id: 6,
     title: "Webhook Support",
-    description: "Integrate InstaAutoDM with your existing tools via webhooks. Connect to Zapier, Slack, CRMs, and thousands of other apps.",
+    description: "Integrate DmDost with your existing tools via webhooks. Connect to Zapier, Slack, CRMs, and thousands of other apps.",
     icon: "Webhook",
     color: "text-chart-1",
     bg: "bg-chart-1/10",
