@@ -26,7 +26,7 @@ function getBreadcrumb(pathname: string): string[] {
 }
 
 export function DashboardTopbar() {
-  const { user, logout } = useAuth();
+  const { user, logout, activeWorkspace } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const breadcrumbs = getBreadcrumb(location.pathname);
@@ -37,6 +37,7 @@ export function DashboardTopbar() {
     navigate("/login");
   };
 
+  
   return (
     <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 backdrop-blur-md px-4">
       <SidebarTrigger />
@@ -50,6 +51,13 @@ export function DashboardTopbar() {
           </span>
         ))}
       </nav>
+
+      {activeWorkspace?.username && (
+        <Badge variant="outline" className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-xs font-medium border-pink-500/30 text-pink-600 dark:text-pink-400 bg-pink-50/50 dark:bg-pink-950/20">
+          <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+          @{activeWorkspace.username}
+        </Badge>
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         <div className="relative hidden md:block">

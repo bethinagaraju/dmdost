@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { ModeToggle } from "@/components/mode-toggle";
 import { APP_NAME, NAV_LINKS } from "@/constants";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function LandingNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -46,12 +48,20 @@ export function LandingNavbar() {
 
         <div className="hidden md:flex items-center gap-2">
           <ModeToggle />
-          <Button variant="ghost" size="sm" asChild>
-            <Link to="/login">Sign In</Link>
-          </Button>
-          <Button size="sm" asChild className="gradient-brand text-white border-0 hover:opacity-90">
-            <Link to="/register">Get Started Free</Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button size="sm" asChild className="gradient-brand text-white border-0 hover:opacity-90">
+              <Link to="/dashboard">Go to Dashboard</Link>
+            </Button>
+          ) : (
+            <>
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/login">Sign In</Link>
+              </Button>
+              <Button size="sm" asChild className="gradient-brand text-white border-0 hover:opacity-90">
+                <Link to="/register">Get Started Free</Link>
+              </Button>
+            </>
+          )}
         </div>
 
         <div className="flex md:hidden items-center gap-2">
@@ -82,12 +92,20 @@ export function LandingNavbar() {
                 </a>
               ))}
               <div className="flex flex-col gap-2 pt-2 border-t">
-                <Button variant="outline" asChild>
-                  <Link to="/login">Sign In</Link>
-                </Button>
-                <Button asChild className="gradient-brand text-white border-0 hover:opacity-90">
-                  <Link to="/register">Get Started Free</Link>
-                </Button>
+                {isAuthenticated ? (
+                  <Button asChild className="gradient-brand text-white border-0 hover:opacity-90">
+                    <Link to="/dashboard">Go to Dashboard</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button variant="outline" asChild>
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                    <Button asChild className="gradient-brand text-white border-0 hover:opacity-90">
+                      <Link to="/register">Get Started Free</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </motion.div>

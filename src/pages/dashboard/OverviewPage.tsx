@@ -34,17 +34,33 @@ export default function OverviewPage() {
     instagramService.getStatus()
       .then((res) => {
         console.log("Instagram status fetch success:", res);
-        if (res.success && res.data) {
-          setInstagramStatus({
-            connected: res.data.connected,
-            username: res.data.username,
-          });
-          if (!res.data.connected) {
-            console.log("Not connected! Setting isModalOpen to true");
-            setIsModalOpen(true);
+        if (res.success && Array.isArray(res.data)) {
+          let activeWsId: string | null = null;
+          try {
+            const stored = localStorage.getItem("dmdost_active_workspace");
+            if (stored) {
+              activeWsId = JSON.parse(stored).workspaceId;
+            }
+          } catch {
+            // ignore JSON error
+          }
+          const currentWs = res.data.find((ws) => ws.workspaceId === activeWsId) || res.data[0];
+
+          if (currentWs) {
+            setInstagramStatus({
+              connected: currentWs.connected,
+              username: currentWs.username,
+            });
+            if (!currentWs.connected) {
+              console.log("Not connected! Setting isModalOpen to true");
+              setIsModalOpen(true);
+            } else {
+              console.log("Connected! Setting isModalOpen to false");
+              setIsModalOpen(false);
+            }
           } else {
-            console.log("Connected! Setting isModalOpen to false");
-            setIsModalOpen(false);
+            setInstagramStatus({ connected: false, username: null });
+            setIsModalOpen(true);
           }
         } else {
           console.log("Invalid status response structure:", res);

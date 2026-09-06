@@ -4,8 +4,10 @@ import { X, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { APP_NAME } from "@/constants";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function LandingFooter() {
+  const { isAuthenticated } = useAuth();
   const year = new Date().getFullYear();
 
   return (
@@ -25,8 +27,8 @@ export function LandingFooter() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Button size="lg" asChild className="h-14 px-10 bg-white text-purple-600 hover:bg-white/90 font-bold text-lg rounded-xl shadow-lg">
-              <Link to="/register">
-                Start for Free
+              <Link to={isAuthenticated ? "/dashboard" : "/register"}>
+                {isAuthenticated ? "Go to Dashboard" : "Start for Free"}
               </Link>
             </Button>
           </div>

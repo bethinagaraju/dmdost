@@ -23,6 +23,17 @@ export interface InstagramAccount {
   permissions: string[];
 }
 
+export interface WorkspaceAnalytics {
+  workspaceId: string;
+  totalDmsSent: number;
+  totalCommentsSent: number;
+  totalFollowersGained: number;
+  totalRuns: number;
+  activeAutomationsCount: number;
+  totalAutomationsCount: number;
+  totalButtonClicks: number;
+}
+
 export interface Automation {
   id: string;
   name: string;
@@ -36,11 +47,39 @@ export interface Automation {
   accountId: string;
   createdAt: string;
   updatedAt: string;
+  followersGained?: number;
+  runs?: number;
+  buttonClicks?: number;
+  dmsSent?: number;
+  commentsSent?: number;
+  metrics?: {
+    automationId?: string;
+    followersGained?: number;
+    runs?: number;
+    buttonClicks?: number;
+    dmsSent?: number;
+    commentsSent?: number;
+  };
   stats: {
+    runs?: number;
+    followersGained?: number;
+    buttonClicks?: number;
     triggered: number;
     sent: number;
+    commentsSent?: number;
     failed: number;
   };
+  optInMessage?: string;
+  welcomeMessage?: string;
+  buttonEnabled?: boolean;
+  buttonText?: string;
+  linkUrl?: string;
+  followRequired?: boolean;
+  followGateMessage?: string;
+  delayType?: "FIXED" | "RANDOM" | null;
+  delaySeconds?: number;
+  raw?: any;
+  isDmAutomation?: boolean;
 }
 
 export type AutomationType =
@@ -213,3 +252,6 @@ export interface SupportTicket {
   userId: string;
   userName: string;
 }
+
+export * from "./dmAutomation";
+

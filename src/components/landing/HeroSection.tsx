@@ -2,8 +2,10 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowRight, MessageCircle, Sparkles, Camera, Heart, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function HeroSection() {
+  const { isAuthenticated } = useAuth();
   return (
     <section className="relative min-h-screen pt-32 pb-20 overflow-hidden flex items-center bg-background">
       {/* Background Gradients */}
@@ -44,8 +46,8 @@ export function HeroSection() {
               className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start mb-12"
             >
               <Button size="lg" asChild className="gradient-brand text-white border-0 hover:opacity-90 shadow-lg shadow-purple-500/25 h-14 px-8 text-lg rounded-xl">
-                <Link to="/register">
-                  Start for Free
+                <Link to={isAuthenticated ? "/dashboard" : "/register"}>
+                  {isAuthenticated ? "Go to Dashboard" : "Start for Free"}
                 </Link>
               </Button>
               <Button size="lg" variant="ghost" className="h-14 px-6 text-lg hover:bg-transparent hover:text-primary transition-colors group">

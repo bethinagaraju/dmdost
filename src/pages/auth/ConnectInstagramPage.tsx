@@ -41,7 +41,8 @@ export default function ConnectInstagramPage() {
       const checkStatus = async () => {
         try {
           const res = await instagramService.getStatus();
-          if (res.data?.connected) {
+          const hasConnected = Array.isArray(res.data) && res.data.some((ws) => ws.connected);
+          if (hasConnected) {
             navigate("/dashboard", { replace: true });
           } else {
             setIsCheckingStatus(false);
