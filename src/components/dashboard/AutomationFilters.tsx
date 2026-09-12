@@ -38,6 +38,7 @@ export function AutomationFilters({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All Types</SelectItem>
+          <SelectItem value="post_reel_dm">Post/Reel DM</SelectItem>
           <SelectItem value="keyword_dm">Keyword DM</SelectItem>
           <SelectItem value="comment_reply">Comment Reply</SelectItem>
           <SelectItem value="follow_check">Follow Check</SelectItem>

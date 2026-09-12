@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { automationService, dmAutomationService } from "@/services";
+import { automationService, dmAutomationService, postReelDmService } from "@/services";
 import { MOCK_AUTOMATIONS } from "@/constants/mockData";
 import { showToast } from "@/hooks";
 import type { Automation, WorkspaceAnalytics } from "@/types";
@@ -13,6 +13,10 @@ import { DmAutomationWizardDialog } from "@/components/dashboard/dmWizard/DmAuto
 import { DmTestSimulatorDialog } from "@/components/dashboard/dm/DmTestSimulatorDialog";
 import { DmExecutionsDialog } from "@/components/dashboard/dm/DmExecutionsDialog";
 import { DmMetricsDialog } from "@/components/dashboard/dm/DmMetricsDialog";
+import { PostReelDmWizardDialog } from "@/components/dashboard/postReelWizard/PostReelDmWizardDialog";
+import { PostReelDmTestSimulatorDialog } from "@/components/dashboard/postReel/PostReelDmTestSimulatorDialog";
+import { PostReelDmMetricsDialog } from "@/components/dashboard/postReel/PostReelDmMetricsDialog";
+import { PostReelDmExecutionsDialog } from "@/components/dashboard/postReel/PostReelDmExecutionsDialog";
 
 export default function AutomationsPage() {
   const { activeWorkspace } = useAuth();
@@ -27,13 +31,21 @@ export default function AutomationsPage() {
   const [showTypeSelector, setShowTypeSelector] = useState(false);
   const [showCommentWizard, setShowCommentWizard] = useState(false);
   const [showDmWizard, setShowDmWizard] = useState(false);
+  const [showPostReelWizard, setShowPostReelWizard] = useState(false);
+
   const [editingCommentAuto, setEditingCommentAuto] = useState<Automation | null>(null);
   const [editingDmAuto, setEditingDmAuto] = useState<any | null>(null);
+  const [editingPostReelAuto, setEditingPostReelAuto] = useState<any | null>(null);
 
-  // Tool / Simulation / Logs / Metrics modals
+  // Tool / Simulation / Logs / Metrics modals (Comment & DM)
   const [testAutomation, setTestAutomation] = useState<Automation | null>(null);
   const [executionsAutomation, setExecutionsAutomation] = useState<Automation | null>(null);
   const [metricsAutomation, setMetricsAutomation] = useState<Automation | null>(null);
+
+  // Post/Reel Specific Modals
+  const [testPostReelAuto, setTestPostReelAuto] = useState<Automation | null>(null);
+  const [executionsPostReelAuto, setExecutionsPostReelAuto] = useState<Automation | null>(null);
+  const [metricsPostReelAuto, setMetricsPostReelAuto] = useState<Automation | null>(null);
 
   const fetchAllAutomations = async () => {
     if (!activeWorkspace?.workspaceId) return;
@@ -51,41 +63,38 @@ export default function AutomationsPage() {
           console.error("Failed to fetch workspace analytics:", err);
         });
 
-      // Try Unified All Automations Endpoint first (GET /api/v1/automation/all)
-      let unifiedData: any[] | null = null;
-      try {
-        const unifiedRes = await automationService.getAllAutomations(activeWorkspace.workspaceId);
-        if (unifiedRes.success && Array.isArray(unifiedRes.data)) {
-          unifiedData = unifiedRes.data;
-        }
-      } catch {
-        unifiedData = null;
-      }
+      // Fetch Comment-to-DM, DM Automations, and Post/Reel DM Automations concurrently
+      const [commentRes, dmRes, postReelRes] = await Promise.allSettled([
+        automationService.getCommentToDm(activeWorkspace.workspaceId),
+        dmAutomationService.getAll(activeWorkspace.workspaceId),
+        postReelDmService.getAll(activeWorkspace.workspaceId),
+      ]);
 
-      if (unifiedData) {
-        const mapped = unifiedData.map((item: any) => {
-          const isDm = item.type === "DM_AUTOMATION";
+      const combined: Automation[] = [];
+
+      // 1. Comment-to-DM
+      if (commentRes.status === "fulfilled" && commentRes.value.success && Array.isArray(commentRes.value.data)) {
+        commentRes.value.data.forEach((item: any) => {
           const followersGained = item.followersGained ?? item.metrics?.followersGained ?? 0;
           const runs = item.runs ?? item.metrics?.runs ?? item.runCount ?? 0;
           const buttonClicks = item.buttonClicks ?? item.metrics?.buttonClicks ?? item.clicks ?? 0;
           const dmsSent = item.dmsSent ?? item.metrics?.dmsSent ?? item.stats?.sent ?? 0;
           const commentsSent = item.commentsSent ?? item.metrics?.commentsSent ?? 0;
-          const failed = item.failed ?? item.stats?.failed ?? 0;
 
-          return {
+          combined.push({
             id: item.id,
             name: item.name,
-            type: isDm ? ("keyword_dm" as const) : ("comment_reply" as const),
+            type: "comment_reply" as const,
             status: (item.status || "active").toLowerCase() as any,
-            trigger: isDm ? (item.triggerType || "Keyword DM") : "Comment trigger",
+            trigger: "Comment trigger",
             conditions: [],
             template: "",
             delay: item.delaySeconds ?? item.delay ?? 0,
             delayType: item.delayType || "FIXED",
             delaySeconds: item.delaySeconds ?? 0,
             accountId: activeWorkspace.instagramUserId || "ig_default",
-            createdAt: item.createdAt || new Date().toISOString(),
-            updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
+            createdAt: item.createdAt,
+            updatedAt: item.createdAt,
             followersGained,
             runs,
             buttonClicks,
@@ -106,122 +115,116 @@ export default function AutomationsPage() {
               sent: dmsSent,
               commentsSent,
               triggered: runs,
-              failed,
+              failed: item.stats?.failed ?? 0,
             },
             raw: item,
-            isDmAutomation: isDm,
-          };
-        });
-        setAutomations(mapped);
-      } else {
-        // Fallback: Fetch both Comment-to-DM and DM Automations individually
-        const [commentRes, dmRes] = await Promise.allSettled([
-          automationService.getCommentToDm(activeWorkspace.workspaceId),
-          dmAutomationService.getAll(activeWorkspace.workspaceId),
-        ]);
-
-        const combined: Automation[] = [];
-
-        if (commentRes.status === "fulfilled" && commentRes.value.success && Array.isArray(commentRes.value.data)) {
-          commentRes.value.data.forEach((item: any) => {
-            const followersGained = item.followersGained ?? item.metrics?.followersGained ?? 0;
-            const runs = item.runs ?? item.metrics?.runs ?? item.runCount ?? 0;
-            const buttonClicks = item.buttonClicks ?? item.metrics?.buttonClicks ?? item.clicks ?? 0;
-            const dmsSent = item.dmsSent ?? item.metrics?.dmsSent ?? item.stats?.sent ?? 0;
-            const commentsSent = item.commentsSent ?? item.metrics?.commentsSent ?? 0;
-
-            combined.push({
-              id: item.id,
-              name: item.name,
-              type: "comment_reply" as const,
-              status: (item.status || "active").toLowerCase() as any,
-              trigger: "Comment trigger",
-              conditions: [],
-              template: "",
-              delay: item.delaySeconds ?? item.delay ?? 0,
-              delayType: item.delayType || "FIXED",
-              delaySeconds: item.delaySeconds ?? 0,
-              accountId: activeWorkspace.instagramUserId || "ig_default",
-              createdAt: item.createdAt,
-              updatedAt: item.createdAt,
-              followersGained,
-              runs,
-              buttonClicks,
-              dmsSent,
-              commentsSent,
-              metrics: {
-                automationId: item.id,
-                followersGained,
-                runs,
-                buttonClicks,
-                dmsSent,
-                commentsSent,
-              },
-              stats: {
-                runs,
-                followersGained,
-                buttonClicks,
-                sent: dmsSent,
-                commentsSent,
-                triggered: runs,
-                failed: item.stats?.failed ?? 0,
-              },
-              raw: item,
-              isDmAutomation: false,
-            });
+            isDmAutomation: false,
           });
-        }
+        });
+      }
 
-        if (dmRes.status === "fulfilled" && dmRes.value.success && Array.isArray(dmRes.value.data)) {
-          dmRes.value.data.forEach((item: any) => {
-            const runs = item.runs ?? 0;
-            const dmsSent = item.dmsSent ?? 0;
-            const buttonClicks = item.buttonClicks ?? 0;
-            const failed = item.failed ?? 0;
+      // 2. DM Automations
+      if (dmRes.status === "fulfilled" && dmRes.value.success && Array.isArray(dmRes.value.data)) {
+        dmRes.value.data.forEach((item: any) => {
+          const runs = item.runs ?? 0;
+          const dmsSent = item.dmsSent ?? 0;
+          const buttonClicks = item.buttonClicks ?? 0;
+          const failed = item.failed ?? 0;
 
-            combined.push({
-              id: item.id,
-              name: item.name,
-              type: "keyword_dm" as const,
-              status: (item.status || "active").toLowerCase() as any,
-              trigger: item.keywords?.length ? item.keywords.join(", ") : "Direct Message",
-              conditions: [],
-              template: "",
-              delay: 0,
-              delayType: "FIXED",
-              delaySeconds: 0,
-              accountId: activeWorkspace.instagramUserId || "ig_default",
-              createdAt: item.createdAt,
-              updatedAt: item.updatedAt || item.createdAt,
-              followersGained: 0,
+          combined.push({
+            id: item.id,
+            name: item.name,
+            type: "keyword_dm" as const,
+            status: (item.status || "active").toLowerCase() as any,
+            trigger: item.keywords?.length ? item.keywords.join(", ") : "Direct Message",
+            conditions: [],
+            template: "",
+            delay: 0,
+            delayType: "FIXED",
+            delaySeconds: 0,
+            accountId: activeWorkspace.instagramUserId || "ig_default",
+            createdAt: item.createdAt,
+            updatedAt: item.updatedAt || item.createdAt,
+            followersGained: 0,
+            runs,
+            buttonClicks,
+            dmsSent,
+            commentsSent: 0,
+            metrics: {
+              automationId: item.id,
               runs,
               buttonClicks,
               dmsSent,
               commentsSent: 0,
-              metrics: {
-                automationId: item.id,
-                runs,
-                buttonClicks,
-                dmsSent,
-                commentsSent: 0,
-              },
-              stats: {
-                runs,
-                followersGained: 0,
-                buttonClicks,
-                sent: dmsSent,
-                commentsSent: 0,
-                triggered: runs,
-                failed,
-              },
-              raw: item,
-              isDmAutomation: true,
-            });
+            },
+            stats: {
+              runs,
+              followersGained: 0,
+              buttonClicks,
+              sent: dmsSent,
+              commentsSent: 0,
+              triggered: runs,
+              failed,
+            },
+            raw: item,
+            isDmAutomation: true,
           });
-        }
-
-        setAutomations(combined.length > 0 ? combined : MOCK_AUTOMATIONS);
+        });
       }
+
+      // 3. Post/Reel DM Automations
+      if (postReelRes.status === "fulfilled" && postReelRes.value.success && Array.isArray(postReelRes.value.data)) {
+        postReelRes.value.data.forEach((item: any) => {
+          const sharesReceived = item.sharesReceived ?? item.metrics?.sharesReceived ?? 0;
+          const initialDms = item.initialDmsSent ?? item.metrics?.initialDmsSent ?? 0;
+          const primaryDms = item.primaryDmsSent ?? item.metrics?.primaryDmsSent ?? 0;
+          const totalDms = initialDms + primaryDms;
+          const ctaClicks = item.ctaClicks ?? item.metrics?.ctaClicks ?? 0;
+          const followersGained = item.followersGained ?? item.metrics?.followersGained ?? 0;
+
+          combined.push({
+            id: item.id,
+            name: item.name,
+            type: "post_reel_dm" as const,
+            status: (item.status || "active").toLowerCase() as any,
+            trigger: `Share Reel (${item.mediaType || "Post"})`,
+            conditions: [],
+            template: "",
+            delay: item.initialDelaySeconds ?? 0,
+            delayType: "FIXED",
+            delaySeconds: item.initialDelaySeconds ?? 0,
+            accountId: activeWorkspace.instagramUserId || "ig_default",
+            createdAt: item.createdAt || new Date().toISOString(),
+            updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
+            followersGained,
+            runs: sharesReceived,
+            buttonClicks: ctaClicks,
+            dmsSent: totalDms,
+            commentsSent: 0,
+            metrics: {
+              automationId: item.id,
+              followersGained,
+              runs: sharesReceived,
+              buttonClicks: ctaClicks,
+              dmsSent: totalDms,
+              commentsSent: 0,
+            },
+            stats: {
+              runs: sharesReceived,
+              followersGained,
+              buttonClicks: ctaClicks,
+              sent: totalDms,
+              commentsSent: 0,
+              triggered: sharesReceived,
+              failed: 0,
+            },
+            raw: { ...item, isPostReelDm: true },
+            isDmAutomation: false,
+          });
+        });
+      }
+
+      setAutomations(combined.length > 0 ? combined : MOCK_AUTOMATIONS);
     } catch (err) {
       console.error("Failed to load automations:", err);
       setAutomations(MOCK_AUTOMATIONS);
@@ -253,15 +256,24 @@ export default function AutomationsPage() {
     return matchSearch && matchType && matchStatus;
   });
 
+  const isPostReelAuto = (auto: any) => {
+    return auto.type === "post_reel_dm" || auto.raw?.isPostReelDm || auto.raw?.mediaId;
+  };
+
   const isDmAuto = (auto: any) => {
-    return auto.isDmAutomation || auto.type === "keyword_dm" || auto.raw?.type === "DM_AUTOMATION";
+    return (
+      !isPostReelAuto(auto) &&
+      (auto.isDmAutomation || auto.type === "keyword_dm" || auto.raw?.type === "DM_AUTOMATION")
+    );
   };
 
   const handleToggle = async (id: string, currentStatus: string) => {
     const auto = automations.find((a) => a.id === id);
     const newStatus = currentStatus === "active" ? "paused" : "active";
     try {
-      if (auto && isDmAuto(auto)) {
+      if (auto && isPostReelAuto(auto)) {
+        await postReelDmService.toggleStatus(id, newStatus === "active" ? "ACTIVE" : "PAUSED");
+      } else if (auto && isDmAuto(auto)) {
         await dmAutomationService.toggleStatus(id, newStatus === "active" ? "ACTIVE" : "PAUSED");
       } else {
         if (currentStatus === "active") {
@@ -282,7 +294,9 @@ export default function AutomationsPage() {
   const handleDelete = async (id: string) => {
     const auto = automations.find((a) => a.id === id);
     try {
-      if (auto && isDmAuto(auto)) {
+      if (auto && isPostReelAuto(auto)) {
+        await postReelDmService.delete(id);
+      } else if (auto && isDmAuto(auto)) {
         await dmAutomationService.delete(id);
       } else {
         await automationService.deleteCommentToDm(id);
@@ -295,7 +309,18 @@ export default function AutomationsPage() {
   };
 
   const handleDuplicate = async (auto: any) => {
-    if (isDmAuto(auto)) {
+    if (isPostReelAuto(auto)) {
+      try {
+        const res = await postReelDmService.clone(auto.id);
+        if (res.success && res.data) {
+          showToast("Post/Reel DM automation cloned as draft!", "success");
+          fetchAllAutomations();
+          return;
+        }
+      } catch (err: any) {
+        console.error("Clone post/reel dm error:", err);
+      }
+    } else if (isDmAuto(auto)) {
       try {
         const res = await dmAutomationService.clone(auto.id);
         if (res.success && res.data) {
@@ -304,7 +329,7 @@ export default function AutomationsPage() {
           return;
         }
       } catch (err: any) {
-        console.error("Clone error:", err);
+        console.error("Clone dm error:", err);
       }
     }
 
@@ -336,7 +361,10 @@ export default function AutomationsPage() {
   };
 
   const handleEdit = (auto: any) => {
-    if (isDmAuto(auto)) {
+    if (isPostReelAuto(auto)) {
+      setEditingPostReelAuto(auto.raw || auto);
+      setShowPostReelWizard(true);
+    } else if (isDmAuto(auto)) {
       setEditingDmAuto(auto.raw || auto);
       setShowDmWizard(true);
     } else {
@@ -345,8 +373,11 @@ export default function AutomationsPage() {
     }
   };
 
-  const handleSelectCreateType = (type: "COMMENT_TO_DM" | "DM_AUTOMATION") => {
-    if (type === "COMMENT_TO_DM") {
+  const handleSelectCreateType = (type: "COMMENT_TO_DM" | "DM_AUTOMATION" | "POST_REEL_DM") => {
+    if (type === "POST_REEL_DM") {
+      setEditingPostReelAuto(null);
+      setShowPostReelWizard(true);
+    } else if (type === "COMMENT_TO_DM") {
       setEditingCommentAuto(null);
       setShowCommentWizard(true);
     } else {
@@ -408,6 +439,30 @@ export default function AutomationsPage() {
     setEditingDmAuto(null);
   };
 
+  const handleOpenTestModal = (auto: Automation) => {
+    if (isPostReelAuto(auto)) {
+      setTestPostReelAuto(auto);
+    } else {
+      setTestAutomation(auto);
+    }
+  };
+
+  const handleOpenExecutionsModal = (auto: Automation) => {
+    if (isPostReelAuto(auto)) {
+      setExecutionsPostReelAuto(auto);
+    } else {
+      setExecutionsAutomation(auto);
+    }
+  };
+
+  const handleOpenMetricsModal = (auto: Automation) => {
+    if (isPostReelAuto(auto)) {
+      setMetricsPostReelAuto(auto);
+    } else {
+      setMetricsAutomation(auto);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <AutomationHeader
@@ -433,9 +488,9 @@ export default function AutomationsPage() {
         onEdit={handleEdit}
         onDuplicate={handleDuplicate}
         onDelete={handleDelete}
-        onTest={(auto) => setTestAutomation(auto)}
-        onViewExecutions={(auto) => setExecutionsAutomation(auto)}
-        onViewMetrics={(auto) => setMetricsAutomation(auto)}
+        onTest={handleOpenTestModal}
+        onViewExecutions={handleOpenExecutionsModal}
+        onViewMetrics={handleOpenMetricsModal}
       />
 
       {/* 1. Automation Type Selector Modal */}
@@ -467,7 +522,18 @@ export default function AutomationsPage() {
         onSaveSuccess={handleSaveDmSuccess}
       />
 
-      {/* 4. Test Simulator Dialog */}
+      {/* 4. Post/Reel DM Wizard Dialog */}
+      <PostReelDmWizardDialog
+        isOpen={showPostReelWizard}
+        onClose={() => {
+          setShowPostReelWizard(false);
+          setEditingPostReelAuto(null);
+        }}
+        initialData={editingPostReelAuto}
+        onSuccess={fetchAllAutomations}
+      />
+
+      {/* 5. Comment/DM Test Simulator Dialog */}
       <DmTestSimulatorDialog
         isOpen={!!testAutomation}
         onClose={() => setTestAutomation(null)}
@@ -475,7 +541,7 @@ export default function AutomationsPage() {
         automationName={testAutomation?.name}
       />
 
-      {/* 5. Execution Logs Dialog */}
+      {/* 6. Comment/DM Execution Logs Dialog */}
       <DmExecutionsDialog
         isOpen={!!executionsAutomation}
         onClose={() => setExecutionsAutomation(null)}
@@ -483,13 +549,38 @@ export default function AutomationsPage() {
         automationName={executionsAutomation?.name}
       />
 
-      {/* 6. Performance Metrics Dialog */}
+      {/* 7. Comment/DM Performance Metrics Dialog */}
       <DmMetricsDialog
         isOpen={!!metricsAutomation}
         onClose={() => setMetricsAutomation(null)}
         automationId={metricsAutomation?.id || null}
         automationName={metricsAutomation?.name}
       />
+
+      {/* 8. Post/Reel DM Test Simulator Dialog */}
+      <PostReelDmTestSimulatorDialog
+        isOpen={!!testPostReelAuto}
+        onClose={() => setTestPostReelAuto(null)}
+        automationId={testPostReelAuto?.id || null}
+        automationName={testPostReelAuto?.name}
+      />
+
+      {/* 9. Post/Reel DM Execution Audit Logs Dialog */}
+      <PostReelDmExecutionsDialog
+        isOpen={!!executionsPostReelAuto}
+        onClose={() => setExecutionsPostReelAuto(null)}
+        automationId={executionsPostReelAuto?.id || null}
+        automationName={executionsPostReelAuto?.name}
+      />
+
+      {/* 10. Post/Reel DM Performance Metrics Dialog */}
+      <PostReelDmMetricsDialog
+        isOpen={!!metricsPostReelAuto}
+        onClose={() => setMetricsPostReelAuto(null)}
+        automationId={metricsPostReelAuto?.id || null}
+        automationName={metricsPostReelAuto?.name}
+      />
     </div>
   );
 }
+

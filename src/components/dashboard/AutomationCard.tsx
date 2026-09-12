@@ -59,12 +59,13 @@ export function AutomationCard({
     };
   }, [automation.id]);
 
+  const rawMediaSrc = automation.raw?.mediaThumbnailUrl || automation.raw?.mediaUrl;
   const firstPost = posts[0];
-  const mediaSrc = firstPost
+  const mediaSrc = rawMediaSrc || (firstPost
     ? firstPost.mediaType === "VIDEO"
       ? firstPost.thumbnailUrl
       : firstPost.mediaUrl
-    : null;
+    : null);
 
   // Extract the 5 core per-automation metrics
   const followersGained = automation.followersGained ?? automation.metrics?.followersGained ?? automation.stats?.followersGained ?? 0;

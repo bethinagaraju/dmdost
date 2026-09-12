@@ -88,7 +88,8 @@ export type AutomationType =
   | "follow_check"
   | "welcome_dm"
   | "story_reply"
-  | "live_reply";
+  | "live_reply"
+  | "post_reel_dm";
 
 export interface AutomationCondition {
   field: string;
@@ -254,4 +255,4 @@ export interface SupportTicket {
 }
 
 export * from "./dmAutomation";
-
+export * from "./postReelDmAutomation";

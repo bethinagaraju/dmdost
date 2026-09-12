@@ -64,6 +64,7 @@ export function getAutomationTypeLabel(type: string): string {
     welcome_dm: "Welcome DM",
     story_reply: "Story Reply",
     live_reply: "Live Reply",
+    post_reel_dm: "Post/Reel DM",
   };
   return labels[type] ?? type;
 }
