@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { automationService, dmAutomationService, postReelDmService } from "@/services";
+import { automationService, dmAutomationService, postReelDmService, storyReplyDmAutomationService } from "@/services";
 import { MOCK_AUTOMATIONS } from "@/constants/mockData";
 import { showToast } from "@/hooks";
 import type { Automation, WorkspaceAnalytics } from "@/types";
@@ -17,6 +17,7 @@ import { PostReelDmWizardDialog } from "@/components/dashboard/postReelWizard/Po
 import { PostReelDmTestSimulatorDialog } from "@/components/dashboard/postReel/PostReelDmTestSimulatorDialog";
 import { PostReelDmMetricsDialog } from "@/components/dashboard/postReel/PostReelDmMetricsDialog";
 import { PostReelDmExecutionsDialog } from "@/components/dashboard/postReel/PostReelDmExecutionsDialog";
+import { StoryReplyWizardDialog } from "@/components/dashboard/storyReplyWizard/StoryReplyWizardDialog";
 
 export default function AutomationsPage() {
   const { activeWorkspace } = useAuth();
@@ -32,10 +33,12 @@ export default function AutomationsPage() {
   const [showCommentWizard, setShowCommentWizard] = useState(false);
   const [showDmWizard, setShowDmWizard] = useState(false);
   const [showPostReelWizard, setShowPostReelWizard] = useState(false);
+  const [showStoryReplyWizard, setShowStoryReplyWizard] = useState(false);
 
   const [editingCommentAuto, setEditingCommentAuto] = useState<Automation | null>(null);
   const [editingDmAuto, setEditingDmAuto] = useState<any | null>(null);
   const [editingPostReelAuto, setEditingPostReelAuto] = useState<any | null>(null);
+  const [editingStoryReplyAuto, setEditingStoryReplyAuto] = useState<any | null>(null);
 
   // Tool / Simulation / Logs / Metrics modals (Comment & DM)
   const [testAutomation, setTestAutomation] = useState<Automation | null>(null);
@@ -63,11 +66,12 @@ export default function AutomationsPage() {
           console.error("Failed to fetch workspace analytics:", err);
         });
 
-      // Fetch Comment-to-DM, DM Automations, and Post/Reel DM Automations concurrently
-      const [commentRes, dmRes, postReelRes] = await Promise.allSettled([
+      // Fetch Comment-to-DM, DM Automations, Post/Reel DM Automations, and Story Reply Automations concurrently
+      const [commentRes, dmRes, postReelRes, storyReplyRes] = await Promise.allSettled([
         automationService.getCommentToDm(activeWorkspace.workspaceId),
         dmAutomationService.getAll(activeWorkspace.workspaceId),
         postReelDmService.getAll(activeWorkspace.workspaceId),
+        storyReplyDmAutomationService.getAll(activeWorkspace.workspaceId),
       ]);
 
       const combined: Automation[] = [];
@@ -224,6 +228,43 @@ export default function AutomationsPage() {
         });
       }
 
+      // 4. Story Reply Automations
+      if (storyReplyRes.status === "fulfilled" && storyReplyRes.value.success && Array.isArray(storyReplyRes.value.data)) {
+        storyReplyRes.value.data.forEach((item: any) => {
+          combined.push({
+            id: item.id,
+            name: item.name,
+            type: "story_reply" as const,
+            status: (item.status || "active").toLowerCase() as any,
+            trigger: item.triggerType === "KEYWORD_MATCH" ? `Story Reply (${item.keywords?.join(", ")})` : "Any Story Reply",
+            conditions: [],
+            template: "",
+            delay: item.initialDelaySeconds ?? 0,
+            delayType: "FIXED",
+            delaySeconds: item.initialDelaySeconds ?? 0,
+            accountId: activeWorkspace.instagramUserId || "ig_default",
+            createdAt: item.createdAt || new Date().toISOString(),
+            updatedAt: item.updatedAt || item.createdAt || new Date().toISOString(),
+            followersGained: item.followersGained ?? 0,
+            runs: item.runs ?? 0,
+            buttonClicks: item.buttonClicks ?? 0,
+            dmsSent: item.dmsSent ?? 0,
+            commentsSent: item.commentsSent ?? 0,
+            stats: {
+              runs: item.runs ?? 0,
+              followersGained: item.followersGained ?? 0,
+              buttonClicks: item.buttonClicks ?? 0,
+              sent: item.dmsSent ?? 0,
+              commentsSent: item.commentsSent ?? 0,
+              triggered: item.runs ?? 0,
+              failed: 0,
+            },
+            raw: { ...item, isStoryReply: true },
+            isDmAutomation: false,
+          });
+        });
+      }
+
       setAutomations(combined.length > 0 ? combined : MOCK_AUTOMATIONS);
     } catch (err) {
       console.error("Failed to load automations:", err);
@@ -260,9 +301,13 @@ export default function AutomationsPage() {
     return auto.type === "post_reel_dm" || auto.raw?.isPostReelDm || auto.raw?.mediaId;
   };
 
+  const isStoryReplyAuto = (auto: any) => {
+    return auto.type === "story_reply" || auto.raw?.isStoryReply;
+  };
+
   const isDmAuto = (auto: any) => {
     return (
-      !isPostReelAuto(auto) &&
+      !isPostReelAuto(auto) && !isStoryReplyAuto(auto) &&
       (auto.isDmAutomation || auto.type === "keyword_dm" || auto.raw?.type === "DM_AUTOMATION")
     );
   };
@@ -273,6 +318,8 @@ export default function AutomationsPage() {
     try {
       if (auto && isPostReelAuto(auto)) {
         await postReelDmService.toggleStatus(id, newStatus === "active" ? "ACTIVE" : "PAUSED");
+      } else if (auto && isStoryReplyAuto(auto)) {
+        await storyReplyDmAutomationService.toggleStatus(id, newStatus === "active" ? "ACTIVE" : "PAUSED");
       } else if (auto && isDmAuto(auto)) {
         await dmAutomationService.toggleStatus(id, newStatus === "active" ? "ACTIVE" : "PAUSED");
       } else {
@@ -296,6 +343,8 @@ export default function AutomationsPage() {
     try {
       if (auto && isPostReelAuto(auto)) {
         await postReelDmService.delete(id);
+      } else if (auto && isStoryReplyAuto(auto)) {
+        await storyReplyDmAutomationService.delete(id);
       } else if (auto && isDmAuto(auto)) {
         await dmAutomationService.delete(id);
       } else {
@@ -319,6 +368,17 @@ export default function AutomationsPage() {
         }
       } catch (err: any) {
         console.error("Clone post/reel dm error:", err);
+      }
+    } else if (isStoryReplyAuto(auto)) {
+      try {
+        const res = await storyReplyDmAutomationService.clone(auto.id);
+        if (res.success && res.data) {
+          showToast("Story Reply automation cloned as draft!", "success");
+          fetchAllAutomations();
+          return;
+        }
+      } catch (err: any) {
+        console.error("Clone story reply dm error:", err);
       }
     } else if (isDmAuto(auto)) {
       try {
@@ -364,6 +424,9 @@ export default function AutomationsPage() {
     if (isPostReelAuto(auto)) {
       setEditingPostReelAuto(auto.raw || auto);
       setShowPostReelWizard(true);
+    } else if (isStoryReplyAuto(auto)) {
+      setEditingStoryReplyAuto(auto.raw || auto);
+      setShowStoryReplyWizard(true);
     } else if (isDmAuto(auto)) {
       setEditingDmAuto(auto.raw || auto);
       setShowDmWizard(true);
@@ -373,10 +436,13 @@ export default function AutomationsPage() {
     }
   };
 
-  const handleSelectCreateType = (type: "COMMENT_TO_DM" | "DM_AUTOMATION" | "POST_REEL_DM") => {
+  const handleSelectCreateType = (type: string) => {
     if (type === "POST_REEL_DM") {
       setEditingPostReelAuto(null);
       setShowPostReelWizard(true);
+    } else if (type === "STORY_REPLY_DM") {
+      setEditingStoryReplyAuto(null);
+      setShowStoryReplyWizard(true);
     } else if (type === "COMMENT_TO_DM") {
       setEditingCommentAuto(null);
       setShowCommentWizard(true);
@@ -579,6 +645,20 @@ export default function AutomationsPage() {
         onClose={() => setMetricsPostReelAuto(null)}
         automationId={metricsPostReelAuto?.id || null}
         automationName={metricsPostReelAuto?.name}
+      />
+
+      {/* 11. Story Reply Wizard */}
+      <StoryReplyWizardDialog
+        isOpen={showStoryReplyWizard}
+        onClose={() => {
+          setShowStoryReplyWizard(false);
+          setEditingStoryReplyAuto(null);
+        }}
+        editingAutomation={editingStoryReplyAuto}
+        onSaveSuccess={() => {
+          setShowStoryReplyWizard(false);
+          fetchAllAutomations();
+        }}
       />
     </div>
   );

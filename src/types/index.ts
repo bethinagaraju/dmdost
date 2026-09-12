@@ -256,3 +256,4 @@ export interface SupportTicket {
 
 export * from "./dmAutomation";
 export * from "./postReelDmAutomation";
+export * from "./storyReplyDmAutomation";

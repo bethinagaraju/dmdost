@@ -405,6 +405,7 @@ export const automationService = {
 
 export { dmAutomationService } from "./dmAutomation.service";
 export { postReelDmService } from "./postReelDmAutomation.service";
+export { storyReplyDmAutomationService } from "./storyReplyDmAutomation.service";
 
 export const templateService = {
   getAll: async (): Promise<ApiResponse<DmTemplate[]>> => {
